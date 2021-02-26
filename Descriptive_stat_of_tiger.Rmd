@@ -1,19 +1,77 @@
 ---
-title: 'Descriptive analysis of Images in the database'
-author: 'Chandan Kumar Paney'
+title: "Descriptive analysis of Images in the database"
+author: "Chandan Kumar Pandey"
 output:
   pdf_document: default
   html_notebook: default
+  html_document:
+    df_print: paged
+  word_document: default
 ---
+### This report is the descriptive result of the tiger database which we will be using for training the machine learning network. 
 
-We need to understand the 
+The data can be loaded with the Running the source-code "Fetch_data_from_database.R". This source code can be downloaded from the [git repo](https://github.com/ckp1990/PIC_SEG_DB). You can change the **query** in the code to extract different information. The method to connect to MS-Access if described in **_"Connect_to_database_odbc.pdf"_**. For now I have extracted he information earlier and saved as CSV. 
 
-```{r}
-plot(cars)
+```{r loading the data in the file,warning=FALSE,echo=FALSE,comment=FALSE,message=FALSE}
+animal_data<-read.csv("Animal_cature_details.csv",header = T)
+require(dplyr)
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+### Histrogram of number of image per individuals. 
+```{r historgrams of number of images per ind,echo=FALSE,warning=FALSE,message=FALSE}
+library(ggplot2)
+img_per_ind<-group_by(animal_data,id)%>%
+  summarise(number_of_image=n())%>%
+  as.data.frame()
+plot_hist<-ggplot(img_per_ind,aes(number_of_image))
+plot_hist+geom_histogram(binwidth =10,color="white",fill="black")+ theme_classic()+labs(x="Number of Images per individual",y="Count")+xlim(c(0,150))+ylim(c(0,300))+annotate(geom = "text",x=100,y=250,
+                                                                                                                                                                              label=paste("number of individual in EC dataset",nrow(img_per_ind),sep = " "))
+x<-quantile(img_per_ind$number_of_image)
+quant<-data.frame(quantile=names(x),value=unname(x))
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+```
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+From the figure above it is clear that most of the individuals have few images. For better we can also see the quantile distribution. 
+
+``` {r table of quant,echo=FALSE}
+knitr::kable(quant,align = 'l')
+```
+
+It is also important to understand how the image where taken in the database. There are various methods by which the tiger had been captures, viz. "Camera Trap","Dead animal photo","Photographed animals" etc
+
+```{r CPMD, warning=F,echo=F}
+capture_mode_cat<-c("Camera Trap","Dead animals","Photographed","Skins","rest all images")
+capture_mode_cat<-ordered(capture_mode_cat,levels=capture_mode_cat)
+number_of_images<-rep(NA,length(capture_mode_cat))
+#camera trap images
+number_of_images[1]<-nrow(subset(animal_data,animal_data$CPMD=="CT"))
+#dead
+number_of_images[2]<-nrow(subset(animal_data,animal_data$CPMD=="DE"))
+#photograph
+number_of_images[3]<-nrow(subset(animal_data,animal_data$CPMD=="PH"))
+#skin
+number_of_images[4]<-nrow(subset(animal_data,animal_data$CPMD=="PE"))
+#result all
+number_of_images[5]<-nrow(animal_data)-sum(number_of_images[1:4]) 
+CPMD<-data.frame(mode_of_cap=capture_mode_cat,value=(number_of_images))
+cmpd_plot<-ggplot(data = CPMD,aes(y=value,x=mode_of_cap))
+cmpd_plot+geom_bar(stat="identity",fill="khaki4")+geom_text(aes(label=value),hjust=0.2,vjust=-1,size=5,position = position_dodge(0.9),angle=20)+
+  ylim(c(0,28000))+labs(x="Different modes of capture",y="Number of images")+theme_classic()
+```
+
+It is clear that **`r round(number_of_images[1]/nrow(animal_data)*100,0)`**% of data is camera trap followed by photographed images which together makes **`r round((number_of_images[1]+number_of_images[3])/nrow(animal_data)*100,0)`**% of total images. 
+
+Further camera trap images are take in left and right flank. The number of left and right flanks might not be same for all the tigers. 
+
+```{r flanks plot,echo=F,message=F,warning=F}
+animal_data$side[grep("L",animal_data$side)]<-"L"
+animal_data$side[grep("R",animal_data$side)]<-"R"
+animal_data<-subset(animal_data,is.na(match(animal_data$CPMD,c("CT","PH")))==F)
+animal_data<-animal_data[is.na(animal_data$side)==F,]
+flanks<-group_by(animal_data,id,side)%>%summarise(number=n())%>%as.data.frame()
+
+library(tidyr)
+flank_plot<-spread(data = flanks,key = "side",value = "number",fill = 0)
+spread_plot<-ggplot(data =  flank_plot,aes(x=L,y=R))
+spread_plot+geom_point()
+```
