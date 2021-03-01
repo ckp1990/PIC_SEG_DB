@@ -24,7 +24,7 @@ img_per_ind<-group_by(animal_data,id)%>%
   summarise(number_of_image=n())%>%
   as.data.frame()
 plot_hist<-ggplot(img_per_ind,aes(number_of_image))
-plot_hist+geom_histogram(binwidth =10,color="white",fill="black")+ theme_classic()+labs(x="Number of Images per individual",y="Count")+xlim(c(0,150))+ylim(c(0,300))+annotate(geom = "text",x=100,y=250,
+plot_hist+geom_histogram(binwidth =10,color="white",fill="black")+ theme_classic()+labs(x="Number of Images per individual",y="Count")+xlim(c(0,600))+ylim(c(0,300))+annotate(geom = "text",x=400,y=250,
                                                                                                                                                                               label=paste("number of individual in EC dataset",nrow(img_per_ind),sep = " "))
 x<-quantile(img_per_ind$number_of_image)
 quant<-data.frame(quantile=names(x),value=unname(x))
@@ -94,4 +94,15 @@ empty <- ggplot()+geom_point(aes(1,1), colour="white")+
         axis.title.x=element_blank(), axis.title.y=element_blank())
 #ploting correctly
 grid.arrange(hist_left, empty, scatter_plot, hist_right, ncol=2, nrow=2, widths=c(2, 1), heights=c(1, 2))
+```
+
+As from the discussion it was clear that night and day image was important in classification of the image. It is also important which training the network
+
+```{r traing with time,echo=F,warning=F,message=F}
+require(lubridate)
+require(data.table)
+animal_data$time_seen<-as_datetime(animal_data$time_seen)
+as.POSIXlt(animal_data$time_seen)
+animal_data$time_seen<-as.ITime(as.POSIXlt(animal_data$time_seen))
+class(animal_data$time_seen)
 ```
