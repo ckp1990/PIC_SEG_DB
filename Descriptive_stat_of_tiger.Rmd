@@ -71,7 +71,27 @@ animal_data<-animal_data[is.na(animal_data$side)==F,]
 flanks<-group_by(animal_data,id,side)%>%summarise(number=n())%>%as.data.frame()
 
 library(tidyr)
+require(gridExtra)
 flank_plot<-spread(data = flanks,key = "side",value = "number",fill = 0)
+
 spread_plot<-ggplot(data =  flank_plot,aes(x=L,y=R))
-spread_plot+geom_point()
+scatter_plot<-spread_plot+geom_point(color="red",shape=19,size=0.8)+labs(x="Number of left image",y="Number of right image)")+
+  geom_abline(slope = 1, intercept = 0)+theme_classic()
+#hist_right
+hist_right<-ggplot(data = flank_plot,aes(x=R))+geom_histogram(color="black",fill="red",binwidth = 10)+
+  theme_classic()+labs(x="",y="Count")+coord_flip()
+#hist left
+hist_left<-ggplot(data = flank_plot,aes(x=L))+geom_histogram(color="black",fill="blue",binwidth = 10)+
+  theme_classic()+labs(x="",y="Count")
+empty <- ggplot()+geom_point(aes(1,1), colour="white")+
+
+  theme(axis.ticks=element_blank(), 
+
+        panel.background=element_blank(), 
+
+        axis.text.x=element_blank(), axis.text.y=element_blank(),           
+
+        axis.title.x=element_blank(), axis.title.y=element_blank())
+#ploting correctly
+grid.arrange(hist_left, empty, scatter_plot, hist_right, ncol=2, nrow=2, widths=c(2, 1), heights=c(1, 2))
 ```
