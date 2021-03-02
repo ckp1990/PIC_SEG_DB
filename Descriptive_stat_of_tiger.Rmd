@@ -102,7 +102,22 @@ As from the discussion it was clear that night and day image was important in cl
 require(lubridate)
 require(data.table)
 animal_data$time_seen<-as_datetime(animal_data$time_seen)
-as.POSIXlt(animal_data$time_seen)
-animal_data$time_seen<-as.ITime(as.POSIXlt(animal_data$time_seen))
-class(animal_data$time_seen)
+time_data<-as_datetime(animal_data$time_seen,tz="GMT")
+time_data<-format(time_data,format = "%H%M%S")
+time_data<-time_data%>%na.omit()
+Time_block=as.POSIXct(strptime(c("053000","183000"),"%H%M%S"),tz="GMT")
+Time_block<-format(Time_block,format = "%H%M%S")
+time_of_day<-case_when(
+between(time_data,Time_block[1],Time_block[2]) ~"morning",
+        TRUE ~"night")
+Time_data_frame<-data.frame(time=time_data,class=time_of_day)
+Bar_chart<-group_by(Time_data_frame,class)%>%summarise(count=n())%>%as.data.frame()
+barp<-ggplot(data = Bar_chart,aes(x=class,y=count))
+barp+geom_bar(stat = "identity",fill="red",color="black")+theme_classic()+labs(x="Time of the day",y="Number of Image")+
+  scale_x_discrete(breaks=Bar_chart$class,labels=c("0530-1830 hrs","1831-0529 hrs"))
 ```
+
+The final out come from the data is that most of the TIGERS indivduals have 1-10 pics, while most of the images are from camera trap data. The picture send by the naturlist , dead animals are also significanat. 
+
+Finally, most of the picture are taken in the night times
+
