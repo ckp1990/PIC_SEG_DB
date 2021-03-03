@@ -1,108 +1,110 @@
 ---
-title: "Descriptive analysis of Images in the database"
+title: "Descriptive summary of Images in the database"
 author: "Chandan Kumar Pandey"
 output:
   pdf_document: default
   html_notebook: default
+  word_document: default
   html_document:
     df_print: paged
-  word_document: default
 ---
 ### This report is the descriptive result of the tiger database which we will be using for training the machine learning network. 
 
-The data can be loaded with the Running the source-code "Fetch_data_from_database.R". This source code can be downloaded from the [git repo](https://github.com/ckp1990/PIC_SEG_DB). You can change the **query** in the code to extract different information. The method to connect to MS-Access if described in **_"Connect_to_database_odbc.pdf"_**. For now I have extracted he information earlier and saved as CSV. 
 
 ```{r loading the data in the file,warning=FALSE,echo=FALSE,comment=FALSE,message=FALSE}
 animal_data<-read.csv("Animal_cature_details.csv",header = T)
 require(dplyr)
-```
-
-### Histrogram of number of image per individuals. 
-```{r historgrams of number of images per ind,echo=FALSE,warning=FALSE,message=FALSE}
-library(ggplot2)
-img_per_ind<-group_by(animal_data,id)%>%
-  summarise(number_of_image=n())%>%
-  as.data.frame()
-plot_hist<-ggplot(img_per_ind,aes(number_of_image))
-plot_hist+geom_histogram(binwidth =10,color="white",fill="black")+ theme_classic()+labs(x="Number of Images per individual",y="Count")+xlim(c(0,600))+ylim(c(0,300))+annotate(geom = "text",x=400,y=250,
-                                                                                                                                                                              label=paste("number of individual in EC dataset",nrow(img_per_ind),sep = " "))
-x<-quantile(img_per_ind$number_of_image)
-quant<-data.frame(quantile=names(x),value=unname(x))
+require(ggplot2)
 
 ```
 
-From the figure above it is clear that most of the individuals have few images. For better we can also see the quantile distribution. 
+### Number of tigers in different capture mode.
 
-``` {r table of quant,echo=FALSE}
-knitr::kable(quant,align = 'l')
-```
+The are total `r nrow(animal_data)` images belonging to `r length(unique(animal_data$id))` individuals taken in `r length(unique(animal_data$site))` different sites. However, the images in the database consist of camera traps, photo from naturalist, dead tigers, pelted skin etc. The following graph provide summary of this.
 
-It is also important to understand how the image where taken in the database. There are various methods by which the tiger had been captures, viz. "Camera Trap","Dead animal photo","Photographed animals" etc
 
-```{r CPMD, warning=F,echo=F}
-capture_mode_cat<-c("Camera Trap","Dead animals","Photographed","Skins","rest all images")
+```{r CPMD, warning=F,echo=F,message=F}
+require(ggplot2)
+require(gridExtra)
+capture_mode_cat<-c("Camera Trap","Photo by naturalist","rest of all images")
 capture_mode_cat<-ordered(capture_mode_cat,levels=capture_mode_cat)
 number_of_images<-rep(NA,length(capture_mode_cat))
 #camera trap images
 number_of_images[1]<-nrow(subset(animal_data,animal_data$CPMD=="CT"))
-#dead
-number_of_images[2]<-nrow(subset(animal_data,animal_data$CPMD=="DE"))
 #photograph
-number_of_images[3]<-nrow(subset(animal_data,animal_data$CPMD=="PH"))
-#skin
-number_of_images[4]<-nrow(subset(animal_data,animal_data$CPMD=="PE"))
-#result all
-number_of_images[5]<-nrow(animal_data)-sum(number_of_images[1:4]) 
+number_of_images[2]<-nrow(subset(animal_data,animal_data$CPMD=="PH"))
+#rest all
+number_of_images[3]<-nrow(animal_data)-sum(number_of_images[1:2]) 
 CPMD<-data.frame(mode_of_cap=capture_mode_cat,value=(number_of_images))
 cmpd_plot<-ggplot(data = CPMD,aes(y=value,x=mode_of_cap))
-cmpd_plot+geom_bar(stat="identity",fill="khaki4")+geom_text(aes(label=value),hjust=0.2,vjust=-1,size=5,position = position_dodge(0.9),angle=20)+
-  ylim(c(0,28000))+labs(x="Different modes of capture",y="Number of images")+theme_classic()
+number<-cmpd_plot+geom_bar(stat="identity",fill="khaki4")+geom_text(aes(label=value),hjust=0.2,vjust=-1,size=5,position = position_dodge(0.9),angle=20)+
+  ylim(c(0,28000))+labs(x="Different mode of iamges captures",y="Number of images")+theme_classic()
+
+##number of individuals. 
+indivi<-rep(NA, length(capture_mode_cat))
+#cT
+indivi[1]<-length(unique(animal_data$id[which(animal_data$CPMD=="CT")]))
+#PH
+indivi[2]<-length(unique(animal_data$id[which(animal_data$CPMD=="PH")]))
+#rest all
+not_PH_CT<-subset(animal_data,is.na(match(animal_data$CPMD,unique(animal_data$CPMD)[3:8]))==F)
+indivi[3]<-length(unique(not_PH_CT$id))
+CPMD_ind<-data.frame(mode_of_cap=capture_mode_cat,value=(indivi))
+cmpd_plot_ind<-ggplot(data = CPMD_ind,aes(y=indivi,x=mode_of_cap))
+ind<-cmpd_plot_ind+geom_bar(stat="identity",fill="darkgreen")+geom_text(aes(label=value),hjust=0.2,vjust=-1,size=5,position = position_dodge(0.9),angle=20)+
+  ylim(c(0,2000))+labs(x="Different mode of iamges captures",y="Number of individual")+theme_classic()
+
+grid.arrange(number,ind,nrow=2)
 ```
 
-It is clear that **`r round(number_of_images[1]/nrow(animal_data)*100,0)`**% of data is camera trap followed by photographed images which together makes **`r round((number_of_images[1]+number_of_images[3])/nrow(animal_data)*100,0)`**% of total images. 
+### Histrogram of number of image per individuals. 
+
+It is clear that **`r round(number_of_images[1]/nrow(animal_data)*100,0)`**% of data is camera trap followed by photographed images which together makes **`r round((number_of_images[1]+number_of_images[3])/nrow(animal_data)*100,0)`**% of total images.  Therefore we will only be using the image that were capture using camera traps. 
+
+```{r historgrams of number of images per ind,echo=FALSE,warning=FALSE,message=FALSE}
+library(ggplot2)
+camera_trap_data<-animal_data[animal_data$CPMD=="CT",]
+ploting_hist<-group_by(camera_trap_data,id)%>%summarise(count=n())%>%as.data.frame()
+ploting_hist<-ploting_hist[order(ploting_hist$count),]
+ploting_hist$intervel<-c("10 or less images","11-20 images","21-30 images","31-40 images", "41-50 Images", "more than 50 images")[
+  findInterval(ploting_hist$count,c(0,11,21,31,41,51,Inf))
+]
+final_plot<-group_by(ploting_hist,intervel)%>%summarise(count=n())%>%as.data.frame()
+hist_p<-ggplot(data = final_plot,aes(y=count,x=intervel))
+hist_p+geom_bar(stat="identity",fill="lightgoldenrod4")+labs(x="Number of images per individuals",y="Count")+theme_classic()+
+  ylim(c(0,1000))+geom_text(aes(label=count),hjust=0.2,vjust=-1,size=5,position = position_dodge(0.9),angle=20)
+```
+
+Form the above graph it is clear that 934 individuals have 10 or less number of images. Moreover over `r sum(final_plot$count[1:5])` out of `r sum(final_plot$count)`individuals fall in the range of less that 50 images.  
+
+
+### Number of camera trap images on different flanks
 
 Further camera trap images are take in left and right flank. The number of left and right flanks might not be same for all the tigers. 
 
 ```{r flanks plot,echo=F,message=F,warning=F}
-animal_data$side[grep("L",animal_data$side)]<-"L"
-animal_data$side[grep("R",animal_data$side)]<-"R"
-animal_data<-subset(animal_data,is.na(match(animal_data$CPMD,c("CT","PH")))==F)
-animal_data<-animal_data[is.na(animal_data$side)==F,]
-flanks<-group_by(animal_data,id,side)%>%summarise(number=n())%>%as.data.frame()
+camera_trap_data$side[grep("L",camera_trap_data$side)]<-"L"
+camera_trap_data$side[grep("R",camera_trap_data$side)]<-"R"
+flanks<-group_by(camera_trap_data,id,side)%>%summarise(number=n())%>%as.data.frame()
 
 library(tidyr)
 require(gridExtra)
 flank_plot<-spread(data = flanks,key = "side",value = "number",fill = 0)
 
-spread_plot<-ggplot(data =  flank_plot,aes(x=L,y=R))
-scatter_plot<-spread_plot+geom_point(color="red",shape=19,size=0.8)+labs(x="Number of left image",y="Number of right image)")+
-  geom_abline(slope = 1, intercept = 0)+theme_classic()
-#hist_right
-hist_right<-ggplot(data = flank_plot,aes(x=R))+geom_histogram(color="black",fill="red",binwidth = 10)+
-  theme_classic()+labs(x="",y="Count")+coord_flip()
-#hist left
-hist_left<-ggplot(data = flank_plot,aes(x=L))+geom_histogram(color="black",fill="blue",binwidth = 10)+
-  theme_classic()+labs(x="",y="Count")
-empty <- ggplot()+geom_point(aes(1,1), colour="white")+
+spread_plot<-ggplot(data =  flank_plot,aes(x=log10(L),y=log10(R)))
+spread_plot+geom_point(color="black",shape=19,size=1.6)+labs(x="Number of left flank image per individuals \n (in log scale base 10)",y="Number of right flank image per individuals\n(in log base 10 scale)")+
+  geom_abline(slope = 1, intercept = 0)+theme_classic()+geom_text(aes(x=0.5,y=2.0,label="Total number of 1441 individuals"))
 
-  theme(axis.ticks=element_blank(), 
-
-        panel.background=element_blank(), 
-
-        axis.text.x=element_blank(), axis.text.y=element_blank(),           
-
-        axis.title.x=element_blank(), axis.title.y=element_blank())
-#ploting correctly
-grid.arrange(hist_left, empty, scatter_plot, hist_right, ncol=2, nrow=2, widths=c(2, 1), heights=c(1, 2))
 ```
+### Camera trap images at different times of the day
 
 As from the discussion it was clear that night and day image was important in classification of the image. It is also important which training the network
 
 ```{r traing with time,echo=F,warning=F,message=F}
 require(lubridate)
 require(data.table)
-animal_data$time_seen<-as_datetime(animal_data$time_seen)
-time_data<-as_datetime(animal_data$time_seen,tz="GMT")
+camera_trap_data$time_seen<-as_datetime(camera_trap_data$time_seen)
+time_data<-as_datetime(camera_trap_data$time_seen,tz="GMT")
 time_data<-format(time_data,format = "%H%M%S")
 time_data<-time_data%>%na.omit()
 Time_block=as.POSIXct(strptime(c("053000","183000"),"%H%M%S"),tz="GMT")
@@ -114,10 +116,30 @@ Time_data_frame<-data.frame(time=time_data,class=time_of_day)
 Bar_chart<-group_by(Time_data_frame,class)%>%summarise(count=n())%>%as.data.frame()
 barp<-ggplot(data = Bar_chart,aes(x=class,y=count))
 barp+geom_bar(stat = "identity",fill="red",color="black")+theme_classic()+labs(x="Time of the day",y="Number of Image")+
-  scale_x_discrete(breaks=Bar_chart$class,labels=c("0530-1830 hrs","1831-0529 hrs"))
+  scale_x_discrete(breaks=Bar_chart$class,labels=c("day image","Night images"))+
+  geom_text(aes(label=count),hjust=0.2,vjust=-1,size=5,position = position_dodge(0.9),angle=20)+ylim(c(0,23000))
 ```
 
-The final out come from the data is that most of the TIGERS indivduals have 1-10 pics, while most of the images are from camera trap data. The picture send by the naturlist , dead animals are also significanat. 
+### Images and individual at diffrent sites
+```{r diffrent sites, warning=F,echo=F,message=F}
+## number of images 
+require(dplyr)
+img_site<-group_by(camera_trap_data,site)%>%summarise(count=n(),disti_ind=n_distinct(id))%>%as.data.frame()
+img_site<-na.omit(img_site)
+img_site<-img_site[order(-img_site$count),]
+img_site$site<-ordered(img_site$site,levels=img_site$site)
+plot_img<-ggplot(data = img_site,aes(x=site,y=count))+geom_bar(stat = "identity",fill="midnightblue")+theme_classic()+theme(axis.text.x = element_text(angle = 45,vjust = 0.5))+
+  labs(x="Number of images",y="")
+## number of individuals. 
+ind_site<-plot_img<-ggplot(data = img_site,aes(x=site,y=disti_ind))+geom_bar(stat = "identity",fill="midnightblue")+theme_classic()+theme(axis.text.x = element_text(angle = 45,vjust = 0.5))+
+  labs(x="Number of individuals",y="")
+gridExtra::grid.arrange(plot_img,ind_site,nrow=1,ncol=2)
 
-Finally, most of the picture are taken in the night times
+library(knitr)
+names(img_site)<-c("Camera trapsites","number of images","number of individuals")
+kable(img_site,row.names = F)
+```
+The final out come from the data is that most of the TIGERS individuals have 1-10 pics, while most of the images are from camera trap data.  
+
+
 
