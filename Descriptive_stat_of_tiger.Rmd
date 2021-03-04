@@ -44,10 +44,10 @@ cmpd_plot<-ggplot(data = CPMD_img,aes(y=count,x=CPMD,fill=as.factor(name)))
 number<-cmpd_plot+geom_bar(stat="identity",position =position_dodge(0.9) )+
   geom_text(aes(label=count),hjust=0.25,vjust=-1,size=3,position = position_dodge(0.9),angle=40)+
   ylim(c(0,28000))+
-  labs(x="Different mode of images captures",y="Number of images",label="Species")+
+  labs(x="",y="Number of images",label="Species")+
   theme_classic()+
   scale_fill_manual(name="",values=c("Darkblue","green"),labels=c("Tiger","Leopard"))+
-  scale_x_discrete(labels=c("Picture from camera-trap","Photo by Naturlist","Other images"))
+  scale_x_discrete(labels=c("Camera Trap Photos","Photos by Naturalists","Other Photos"))
 
 #indviduals
 spread_ind<-spread(CPMD[,-3],key = c("CPMD"),value = c("indivi"),fill = 0)
@@ -59,10 +59,10 @@ cmpd_plot_ind<-ggplot(data = CPMD_ind,aes(y=count,x=CPMD,fill=as.factor(name)))
 ind<-cmpd_plot_ind+geom_bar(stat="identity",position =position_dodge(0.9) )+
   geom_text(aes(label=count),hjust=0.25,vjust=-1,size=3,position = position_dodge(0.9),angle=40)+
   ylim(c(0,2000))+
-  labs(x="Different mode of images captures",y="Number of individuals",label="")+
+  labs(x="",y="Number of individuals",label="")+
   theme_classic()+
   scale_fill_manual(name="",values=c("Darkblue","green"),labels=c("Tiger","Leopard"))+
-  scale_x_discrete(labels=c("Photo from camera trap","Photo by Naturlist","Other images"))
+  scale_x_discrete(labels=c("Camera Trap Photos","Photos by Naturalists","Other Photos"))
 grid.arrange(number,ind,nrow=2)
 ```
 
@@ -97,8 +97,8 @@ final_plot_tiger$name<-rep("Tiger",nrow(final_plot_tiger))
 final_plot<-bind_rows(final_plot_leo,final_plot_tiger)
 final_plot$name<-ordered(final_plot$name,levels=c("Tiger","Leopard"))
 hist_p<-ggplot(data = final_plot,aes(y=count,x=intervel,fill=name))
-hist_p+geom_bar(stat="identity",position = position_dodge(0.9))+labs(x="Images per individuals",y="Individual")+theme_classic()+
-  ylim(c(0,1500))+geom_text(aes(label=count),hjust=0.2,vjust=-1,size=2,position = position_dodge(0.9),angle=20)+
+hist_p+geom_bar(stat="identity",position = position_dodge(0.9))+labs(x="Number of Images per Individual",y="Number of Individuals")+theme_classic()+
+  ylim(c(0,1200))+geom_text(aes(label=count),hjust=0.2,vjust=-1,size=2,position = position_dodge(0.9),angle=20)+
   theme(axis.text.x = element_text(size = 8))+
   scale_fill_manual(name="",values=c("Darkblue","green"),labels=c("Tiger","Leopard"))
 ```
@@ -125,7 +125,7 @@ flank_plot$name<-stringr::str_replace(flank_plot$name,"leopard","Leopard")
 flank_plot$name<-ordered(flank_plot$name,levels=c("Tiger","Leopard"))
 
 spread_plot<-ggplot(data =  flank_plot,aes(x=log10(L),y=log10(R),color=name))
-spread_plot+geom_point(shape=19,size=1.6)+labs(x="Number of left flank image per individuals \n (in log scale base 10)",y="Number of right flank image per individuals\n(in log base 10 scale)")+
+spread_plot+geom_point(shape=19,size=1.6)+labs(x="Number of left flank per individuals \n (in log scale base 10)",y="Number of right flank per individuals\n(in log base 10 scale)")+
   geom_abline(slope = 1, intercept = 0)+theme_classic()+scale_color_manual(values=c("Darkblue","green"),labels=c("Tiger","Leopard"),name="")
 
 ```
@@ -142,7 +142,7 @@ camera_trap_data$time_seen<-as_datetime(camera_trap_data$time_seen)
 time_data<-as_datetime(camera_trap_data$time_seen,tz="GMT")
 time_data<-format(time_data,format = "%H%M%S")
 time_data<-time_data%>%na.omit()
-Time_block=as.POSIXct(strptime(c("053000","183000"),"%H%M%S"),tz="GMT")
+Time_block=as.POSIXct(strptime(c("060000","180000"),"%H%M%S"),tz="GMT")
 Time_block<-format(Time_block,format = "%H%M%S")
 time_of_day<-case_when(
 between(time_data,Time_block[1],Time_block[2]) ~"morning",
@@ -153,8 +153,8 @@ Bar_chart$name<-stringr::str_replace(Bar_chart$name,"leopard","Leopard")
 Bar_chart$name<-ordered(Bar_chart$name,levels=c("Tiger","Leopard"))
 barp<-ggplot(data = Bar_chart,aes(x=class,y=count,fill=name))
 barp+geom_bar(stat = "identity",color="black",position = position_dodge(0.9))+
-  theme_classic()+labs(x="Time of the day",y="Number of Image")+
-  scale_x_discrete(breaks=unique(Bar_chart$class),labels=c("day image","Night images"))+
+  theme_classic()+labs(x="",y="Number of Images")+
+  scale_x_discrete(breaks=unique(Bar_chart$class),labels=c("Day-time (0600 - 1800 Hrs)","Night-time (1801 - 0559 Hrs)"))+
   geom_text(aes(label=count),hjust=0.2,vjust=-1,size=5,position = position_dodge(0.9),angle=20)+ylim(c(0,23000))+
   scale_fill_manual(name="",values = c("Darkblue","green"),labels=c("Tiger","Leopard"))
 ```
@@ -175,7 +175,7 @@ plot_img<-ggplot(data = img_site,aes(x=site,y=count,fill=name))+geom_bar(stat = 
   labs(x="Number of images",y="")+
   scale_fill_manual(name="",values=c("Darkblue","green"),labels=c("Tiger","Leopard"))
 ## number of individuals. 
-ind_site<-plot_img<-ggplot(data = img_site,aes(x=site,y=disti_ind,fill=name))+geom_bar(stat = "identity",position = position_dodge(0.9))+theme_classic()+theme(axis.text.x = element_text(angle = 45,vjust = 0.5))+
+plot_ind<-ggplot(data = img_site,aes(x=site,y=disti_ind,fill=name))+geom_bar(stat = "identity",position = position_dodge(0.9))+theme_classic()+theme(axis.text.x = element_text(angle = 45,vjust = 0.5))+
   labs(x="Number of individuals",y="")+
   scale_fill_manual(name="",values=c("Darkblue","green"),labels=c("Tiger","Leopard"))
 gridExtra::grid.arrange(plot_img,ind_site,nrow=1,ncol=2)
