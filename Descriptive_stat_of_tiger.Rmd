@@ -103,7 +103,7 @@ hist_p+geom_bar(stat="identity",position = position_dodge(0.9))+labs(x="Number o
   scale_fill_manual(name="",values=c("Darkblue","green"),labels=c("Tiger","Leopard"))
 ```
 
-Form the above graph it is clear that 1107 leopards  and 933 tigers have 10 or less number of images. Moreover over `r sum(final_plot$count[1:5])` out of `r sum(final_plot$count[1:6])` leopards and   `r sum(final_plot$count[7:11])` out of `r sum(final_plot$count[7:12])` tigers indivduals fall in the range of less that 50 images.  
+Form the above graph it is clear that 1107 leopards  and 933 tigers have 10 or less number of images. Moreover over `r sum(final_plot$count[1:5])` out of `r sum(final_plot$count[1:6])` leopards and   `r sum(final_plot$count[7:11])` out of `r sum(final_plot$count[7:12])` tigers individuals fall in the range of less that 50 images.  
 
 
 ### Number of camera trap images on different flanks

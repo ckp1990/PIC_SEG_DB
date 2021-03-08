@@ -14,5 +14,4 @@ extract_data<-function(connection_name){
   dbDisconnect(connectionName)
   return(capture_TDB_OP)
 }
-leopard_capture_details<-extract_data("leopard_db")
-write.csv(leopard_capture_details,"leopard_capture_details.csv",row.names = F)
+
