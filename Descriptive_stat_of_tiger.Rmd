@@ -1,33 +1,35 @@
 ---
-title: "Descriptive summary of Images in the database"
+title: "Summary Description of Tiger and Leopard Image Data in the \n ExtractCompare Database"
 author: "Chandan Kumar Pandey"
 output:
   word_document: default
+  fig_width: 10
+  fig_height: 8
   html_notebook: default
   pdf_document: default
   html_document:
     df_print: paged
 ---
-### This report is the descriptive result of the tiger and leopard images in the database which we will be using for training the machine learning network. 
+## This report summarizes the image data of tigers and leopards in the ExtractCompare database of CWS.
 
+### 1. Total Number of images of tigers and leopards
+The EC database has a total of 43781 images belonging to 3367 individual tigers and leopards obtained largely through camera trap surveys from 12 Wildlife Reserves and opportunistic collection from a larger network of forested areas neighboring these camera trap “sites”. The opportunistic collection included images of dead tigers, seized pelts, photographs contributed by naturalists and others. Camera trap images contribute to nearly 93% of 25,037 tiger images and 99% of 18,739 leopard images. These images belong to a total of 1984 individual tigers and 1654 individual leopards. Camera trap surveys contribute to nearly 73% and 92% of individual tigers and leopards respectively.
 
 ```{r loading the data in the file,warning=FALSE,echo=FALSE,comment=FALSE,message=FALSE}
 Tiger<-read.csv("Animal_cature_details.csv",header = T)
 Tiger$name<-rep("Tiger",nrow(Tiger))
+Tiger<-Tiger[!duplicated(Tiger),]
 leopard<-read.csv("leopard_capture_details.csv",header = T)
 leopard$name<-rep("leopard",nrow(leopard))
+leopard<-leopard[!duplicated(leopard),]
 require(dplyr)
 require(ggplot2)
 animal_data<-bind_rows(Tiger,leopard)
 ```
 
-### Number of tigers and leopards in different capture mode.
+### 2. Number of images per individual tiger and leopard
 
-The are total `r nrow(animal_data)` images belonging to `r length(unique(animal_data$id))` individuals taken in `r length(unique(animal_data$site))` different sites. Among these animals  there are `r nrow(Tiger)` images for `r length(unique(Tiger$id))` tigers and `r nrow(leopard)` images belonging to `r length(unique(leopard$id))` leopards.
-However, the images in the database consist of camera traps, photo from naturalist, dead tigers, pelted skin etc. The following graph provide summary of this.
-
-
-```{r CPMD, warning=F,echo=F,message=F}
+```{r CPMD, warning=F,echo=F,message=F,fig.width=10, fig.height=8}
 require(ggplot2)
 require(gridExtra)
 library(tidyr)
@@ -66,11 +68,11 @@ ind<-cmpd_plot_ind+geom_bar(stat="identity",position =position_dodge(0.9) )+
 grid.arrange(number,ind,nrow=2)
 ```
 
-### Histrogram of number of image per individuals. 
+### 2. Number of images per individual tiger and leopard
 
 It is clear that **`r round(spread_CPMD[1,2]/rowSums(spread_CPMD[1,-1]),2)*100`%** leopards and **`r round(spread_CPMD[2,2]/rowSums(spread_CPMD[2,-1]),2)*100`%** Tigers images are from camera trap.  Therefore we will only be using the image that were capture using camera traps. 
 
-```{r historgrams of number of images per ind,echo=FALSE,warning=FALSE,message=FALSE}
+```{r historgrams of number of images per ind,echo=FALSE,warning=FALSE,message=FALSE,fig.width=10, fig.height=8}
 library(ggplot2)
 #tiger
 camera_trap_data_tiger<-Tiger[Tiger$CPMD=="CT",]
@@ -103,14 +105,14 @@ hist_p+geom_bar(stat="identity",position = position_dodge(0.9))+labs(x="Number o
   scale_fill_manual(name="",values=c("Darkblue","green"),labels=c("Tiger","Leopard"))
 ```
 
-Form the above graph it is clear that 1107 leopards  and 933 tigers have 10 or less number of images. Moreover over `r sum(final_plot$count[1:5])` out of `r sum(final_plot$count[1:6])` leopards and   `r sum(final_plot$count[7:11])` out of `r sum(final_plot$count[7:12])` tigers individuals fall in the range of less that 50 images.  
+Nearly 65% and 73% of the camera-trapped individual tigers and individual leopards have less than or equal to 10 images per individual, while only 7% and 5% of individual tigers and leopards have more than 50 images per individual.
+
+### 3. Number of camera trap images on different flanks
+
+The number of right and left flank images per individual tiger and leopard are unequal, although nearly 90% of the individuals have almost equal number of right and left flank images. 
 
 
-### Number of camera trap images on different flanks
-
-Further camera trap images are take in left and right flank. The number of left and right flanks might not be same for all the tigers. 
-
-```{r flanks plot,echo=F,message=F,warning=F}
+```{r flanks plot,echo=F,message=F,warning=F,fig.width=10, fig.height=8}
 camera_trap_data<-bind_rows(camera_trap_data_leo,camera_trap_data_tiger)
 camera_trap_data$side[grep("L",camera_trap_data$side)]<-"L"
 camera_trap_data$side[grep("R",camera_trap_data$side)]<-"R"
@@ -129,11 +131,12 @@ spread_plot+geom_point(shape=19,size=1.6)+labs(x="Number of left flank per indiv
   geom_abline(slope = 1, intercept = 0)+theme_classic()+scale_color_manual(values=c("Darkblue","green"),labels=c("Tiger","Leopard"),name="")
 
 ```
-### Camera trap images at different times of the day
 
-As from the discussion it was clear that night and day image was important in classification of the image. It is also important which training the network
+### 4.Day and Night-time images 
 
-```{r traing with time,echo=F,warning=F,message=F}
+
+
+```{r traing with time,echo=F,warning=F,message=F,fig.width=10, fig.height=8}
 require(lubridate)
 require(data.table)
 camera_trap_data<-camera_trap_data[is.na(camera_trap_data$time_seen)==F,]
@@ -158,18 +161,22 @@ barp+geom_bar(stat = "identity",color="black",position = position_dodge(0.9))+
   geom_text(aes(label=count),hjust=0.2,vjust=-1,size=5,position = position_dodge(0.9),angle=20)+ylim(c(0,23000))+
   scale_fill_manual(name="",values = c("Darkblue","green"),labels=c("Tiger","Leopard"))
 ```
-The discrpency in the total number of image in above graph and the first graps is due to fact that for some camera trap images the timing are missing. To be exact, there are `r nrow(animal_data[animal_data$CPMD=="CT",])-nrow(camera_trap_data)` camera trap images that do not have time associated with it
+Nearly 89% and 78% of the camera trap images of tigers and leopards are taken during night time, between 1800 and 0559 hrs. 
 
 
-### Images and individual at diffrent sites
-```{r diffrent sites, warning=F,echo=F,message=F}
+### 5. Distribution of Camera Trapped Images and Individuals among different sites
+```{r diffrent sites, warning=F,echo=F,message=F,fig.width=10, fig.height=8}
 ## number of images 
 require(dplyr)
+require(ggplot2)
+require(gridExtra)
 camera_trap_data$name<-stringr::str_replace(camera_trap_data$name,"leopard","Leopard")
 img_site<-group_by(camera_trap_data,site,name)%>%summarise(count=n(),disti_ind=n_distinct(id))%>%as.data.frame()
 img_site<-na.omit(img_site)
 img_site<-img_site[order(-img_site$count),]
 img_site$site<-ordered(img_site$site,levels=unique(img_site$site))
+levels(img_site$site)<-c("Nagarahole","Bandipur","Bhadra","Wayanad", "BiligiriRT", "Anshi-Dandeli","Kudremukh","CauveryMM",
+                         "Tithimathi","Mhadei","Pench(Mah)", "Goa" )
 img_site$name<-ordered(img_site$name,levels=c("Tiger","Leopard"))
 plot_img<-ggplot(data = img_site,aes(x=site,y=count,fill=name))+geom_bar(stat = "identity",position = position_dodge(0.9))+theme_classic()+theme(axis.text.x = element_text(angle = 45,vjust = 0.5))+
   labs(x="Number of images",y="")+
@@ -178,7 +185,7 @@ plot_img<-ggplot(data = img_site,aes(x=site,y=count,fill=name))+geom_bar(stat = 
 plot_ind<-ggplot(data = img_site,aes(x=site,y=disti_ind,fill=name))+geom_bar(stat = "identity",position = position_dodge(0.9))+theme_classic()+theme(axis.text.x = element_text(angle = 45,vjust = 0.5))+
   labs(x="Number of individuals",y="")+
   scale_fill_manual(name="",values=c("Darkblue","green"),labels=c("Tiger","Leopard"))
-gridExtra::grid.arrange(plot_img,ind_site,nrow=1,ncol=2)
+grid.arrange(plot_img,plot_ind,nrow=1,ncol=2)
 
 library(knitr)
 names(img_site)<-c("Camera trapsites","Speceis","number of images","number of individuals")
@@ -186,7 +193,7 @@ kable(img_site[img_site[,2]=="Tiger",],row.names = F,caption = "Tiger images")
 kable(img_site[img_site[,2]=="Leopard",],row.names = F,caption = "Leopard images")
 
 ```
-The final out come from the data is that most of the individuals have 1-10 pictures, while most of the images are from camera trap data.  
+Nearly 73% of the camera trapped images and 83% of the individual tigers, and, 60% of images and 56% of individual leopards are from Nagarahole, Bandipur and Wayanad sites.
 
 
 

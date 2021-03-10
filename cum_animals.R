@@ -30,3 +30,4 @@ for(n in Seasonal$season){
   new_add[tr,2]<-end_with-start_With
   tr<-tr+1
 }
+
